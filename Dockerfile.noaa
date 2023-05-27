@@ -1,0 +1,12 @@
+# docker build -t noaa-crawler -f Dockerfile.noaa .
+# docker run noaa-crawler
+
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY noaa_crawler.py .
+
+RUN pip install scrapy azure-storage-blob
+
+CMD ["python", "-u", "noaa_crawler.py"]

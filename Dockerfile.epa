@@ -1,0 +1,12 @@
+# docker build -t epa-crawler -f Dockerfile.epa .
+# docker run epa-crawler
+
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY epa_crawler.py .
+
+RUN pip install scrapy azure-storage-blob
+
+CMD ["python", "-u", "epa_crawler.py"]

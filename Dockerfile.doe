@@ -1,0 +1,12 @@
+# docker build -t doe-crawler -f Dockerfile.doe .
+# docker run doe-crawler
+
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY doe_crawler.py .
+
+RUN pip install scrapy azure-storage-blob
+
+CMD ["python", "-u", "doe_crawler.py"]

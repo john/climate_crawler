@@ -1,0 +1,9 @@
+version: '3'
+services:
+  crawler:
+    image: govchange-crawler
+    volumes:
+      - govchange_crawler:/opt/app
+
+volumes:
+  govchange_crawler:
