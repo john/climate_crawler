@@ -6,7 +6,7 @@ and save the raw HTML content to Azure Blob Storage.
 
 TO USE
 From the same directory as this script, run:
-`docker build -t doe-crawler .`
+`docker build -t doe-crawler -f Dockerfile.doe .`
 
 Then
 `docker run doe-crawler`
@@ -36,16 +36,41 @@ from urllib.parse import urlparse
 from azure.storage.blob import BlobServiceClient
 import gzip
 import os
+import argparse
+import json
 import logging
 
 class DoeSpider(scrapy.Spider):
     name = "doe_spider"
 
+    # TODO: handle xml vs html without having to change the code
+
     # -----------> Flipflop XML vs HTML
-    # start_urls = ["https://www.energy.gov/sitemap.xml", "https://www.energy.gov/"]
-    start_urls = ["https://www.doe.gov/sitemap.xml?page=1", "https://www.doe.gov/sitemap.xml?page=2", "https://www.doe.gov/sitemap.xml?page=3", "https://www.doe.gov/sitemap.xml?page=4", "https://www.doe.gov/sitemap.xml?page=5", "https://www.doe.gov/sitemap.xml?page=6", "https://www.doe.gov/sitemap.xml?page=7", "https://www.doe.gov/sitemap.xml?page=8", "https://www.doe.gov/sitemap.xml?page=9", "https://www.doe.gov/sitemap.xml?page=10", "https://www.doe.gov/sitemap.xml?page=11", "https://www.doe.gov/sitemap.xml?page=12", "https://www.doe.gov/sitemap.xml?page=13", "https://www.doe.gov/sitemap.xml?page=14", "https://www.doe.gov/sitemap.xml?page=15", "https://www.doe.gov/sitemap.xml?page=16", "https://www.doe.gov/sitemap.xml?page=17", "https://www.doe.gov/sitemap.xml?page=18", "https://www.doe.gov/sitemap.xml?page=19", "https://www.doe.gov/sitemap.xml?page=20", "https://www.doe.gov/sitemap.xml?page=21", "https://www.doe.gov/sitemap.xml?page=22", "https://www.doe.gov/sitemap.xml?page=23", "https://www.doe.gov/sitemap.xml?page=24", "https://www.doe.gov/sitemap.xml?page=25", "https://www.doe.gov/sitemap.xml?page=26", "https://www.doe.gov/sitemap.xml?page=27", "https://www.doe.gov/sitemap.xml?page=28", "https://www.doe.gov/sitemap.xml?page=29", "https://www.doe.gov/sitemap.xml?page=30", "https://www.doe.gov/sitemap.xml?page=31", "https://www.doe.gov/sitemap.xml?page=32", "https://www.doe.gov/sitemap.xml?page=33", "https://www.doe.gov/sitemap.xml?page=34", "https://www.doe.gov/sitemap.xml?page=35", "https://www.doe.gov/sitemap.xml?page=36", "https://www.doe.gov/sitemap.xml?page=37", "https://www.doe.gov/sitemap.xml?page=38", "https://www.doe.gov/sitemap.xml?page=39", "https://www.doe.gov/sitemap.xml?page=40", "https://www.doe.gov/sitemap.xml?page=41", "https://www.doe.gov/sitemap.xml?page=42", "https://www.doe.gov/sitemap.xml?page=43", "https://www.doe.gov/sitemap.xml?page=44", "https://www.doe.gov/sitemap.xml?page=45", "https://www.doe.gov/sitemap.xml?page=46", "https://www.doe.gov/sitemap.xml?page=47", "https://www.doe.gov/sitemap.xml?page=48", "https://www.doe.gov/sitemap.xml?page=49"]
+    start_urls = ["https://www.energy.gov/sitemap.xml", "https://www.energy.gov/"]
+    #start_urls = ["https://www.doe.gov/sitemap.xml?page=1", "https://www.doe.gov/sitemap.xml?page=2", "https://www.doe.gov/sitemap.xml?page=3", "https://www.doe.gov/sitemap.xml?page=4", "https://www.doe.gov/sitemap.xml?page=5", "https://www.doe.gov/sitemap.xml?page=6", "https://www.doe.gov/sitemap.xml?page=7", "https://www.doe.gov/sitemap.xml?page=8", "https://www.doe.gov/sitemap.xml?page=9", "https://www.doe.gov/sitemap.xml?page=10", "https://www.doe.gov/sitemap.xml?page=11", "https://www.doe.gov/sitemap.xml?page=12", "https://www.doe.gov/sitemap.xml?page=13", "https://www.doe.gov/sitemap.xml?page=14", "https://www.doe.gov/sitemap.xml?page=15", "https://www.doe.gov/sitemap.xml?page=16", "https://www.doe.gov/sitemap.xml?page=17", "https://www.doe.gov/sitemap.xml?page=18", "https://www.doe.gov/sitemap.xml?page=19", "https://www.doe.gov/sitemap.xml?page=20", "https://www.doe.gov/sitemap.xml?page=21", "https://www.doe.gov/sitemap.xml?page=22", "https://www.doe.gov/sitemap.xml?page=23", "https://www.doe.gov/sitemap.xml?page=24", "https://www.doe.gov/sitemap.xml?page=25", "https://www.doe.gov/sitemap.xml?page=26", "https://www.doe.gov/sitemap.xml?page=27", "https://www.doe.gov/sitemap.xml?page=28", "https://www.doe.gov/sitemap.xml?page=29", "https://www.doe.gov/sitemap.xml?page=30", "https://www.doe.gov/sitemap.xml?page=31", "https://www.doe.gov/sitemap.xml?page=32", "https://www.doe.gov/sitemap.xml?page=33", "https://www.doe.gov/sitemap.xml?page=34", "https://www.doe.gov/sitemap.xml?page=35", "https://www.doe.gov/sitemap.xml?page=36", "https://www.doe.gov/sitemap.xml?page=37", "https://www.doe.gov/sitemap.xml?page=38", "https://www.doe.gov/sitemap.xml?page=39", "https://www.doe.gov/sitemap.xml?page=40", "https://www.doe.gov/sitemap.xml?page=41", "https://www.doe.gov/sitemap.xml?page=42", "https://www.doe.gov/sitemap.xml?page=43", "https://www.doe.gov/sitemap.xml?page=44", "https://www.doe.gov/sitemap.xml?page=45", "https://www.doe.gov/sitemap.xml?page=46", "https://www.doe.gov/sitemap.xml?page=47", "https://www.doe.gov/sitemap.xml?page=48", "https://www.doe.gov/sitemap.xml?page=49"]
+    # allowed_domains = ["www.transportation.gov"]
+
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description="DOE Crawler Script")
+    parser.add_argument(
+        "--allowed_domains",
+        type=str,
+        required=True,
+        help="Allowed domains for the crawler, provided as a JSON string (e.g., '[\"www.energy.gov\"]')."
+    )
     
-    allowed_domains = ["www.energy.gov"]
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Convert the string argument to a Python list
+    try:
+        allowed_domains = json.loads(args.allowed_domains)
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON format for --allowed_domains. Example of valid input: '[\"www.energy.gov\"]'")
+
+    # allowed_domains = ["www.energy.gov"]
+    print(f"Allowed domains: {allowed_domains}")
+
     visited_urls = set()
 
     custom_settings = {
@@ -79,9 +104,9 @@ class DoeSpider(scrapy.Spider):
         # Parse the HTML with Scrapy
         try:
             # -----------> Flipflop XML vs HTML
-            # links = response.css('a::attr(href)').getall()
-            namespaces = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-            links = response.xpath('//ns:url/ns:loc/text()', namespaces=namespaces).getall()
+            links = response.css('a::attr(href)').getall()
+            # namespaces = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+            # links = response.xpath('//ns:url/ns:loc/text()', namespaces=namespaces).getall()
 
         except:
             links = set()
@@ -97,8 +122,8 @@ class DoeSpider(scrapy.Spider):
             if (
                 parsed_url.netloc == self.allowed_domains[0]
                 and absolute_url not in self.visited_urls
-                # -----------> Flipflop XML vs HTML
-                # and "?f%" not in absolute_url
+                # -----------> Flipflop XML vs HTML. 12/12/24
+                # and "?f%" not in absolute_url # was this for html or xml?
             ):
                 self.logger.info(f"Fetching {absolute_url}")
                 yield scrapy.Request(absolute_url, callback=self.parse)
@@ -128,12 +153,22 @@ process = CrawlerProcess(settings={
     'AUTOTHROTTLE_ENABLED': True,  # Enable autothrottle
     'AUTOTHROTTLE_START_DELAY': 1,  # Initial delay for autothrottle
     'AUTOTHROTTLE_TARGET_CONCURRENCY': 1,  # Maintain 1 request per second
-    'AUTOTHROTTLE_DEBUG': False,  # Disable autothrottle debug mode
-    'HTTPCACHE_ENABLED': True,  # Enable HTTP caching
-    # -----------> Flipflop XML vs HTML
+    'AUTOTHROTTLE_DEBUG': False,
+    'HTTPCACHE_ENABLED': True,
+
+    # -----------> Flipflop XML vs HTML. Here and below, you need to comment out one or the other depending what you're getting
     # 'DEPTH_LIMIT': 0, # for whole sites
     'DEPTH_LIMIT': 1, # for sitemaps
+
     'LOG_LEVEL': 'INFO',
+    'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+
+    # suggested by ChatGPT, but doesn't seem to be needed
+    # 'COOKIES_ENABLED': True,
+    # 'AUTOTHROTTLE_MAX_DELAY': 10,
+    # DOWNLOADER_MIDDLEWARES = {
+    #     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 110,
+    #     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,}
 })
 
 # Configure settings and start the crawling process

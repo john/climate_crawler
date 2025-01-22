@@ -6,7 +6,7 @@ and save the raw HTML content to Azure Blob Storage.
 
 TO USE
 From the same directory as this script, run:
-`docker build -t doe-crawler .`
+`docker build -t doe-crawler -f Dockerfile.dot .`
 
 Then
 `docker run doe-crawler`
